@@ -36,3 +36,4 @@ class Waitlist(Base):
     user = relationship("User", back_populates="waitlist_entries")
     service = relationship("Service")
     stylist = relationship("Stylist")
+

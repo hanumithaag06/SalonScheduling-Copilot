@@ -29,3 +29,4 @@ class AuditLog(Base):
     )
 
     actor = relationship("User")
+

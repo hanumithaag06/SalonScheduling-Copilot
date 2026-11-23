@@ -35,3 +35,4 @@ class Notification(Base):
 
     user = relationship("User", back_populates="notifications")
     booking = relationship("Booking", back_populates="notifications")
+

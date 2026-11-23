@@ -201,3 +201,4 @@ def downgrade() -> None:
     op.drop_table('stylists')
     op.drop_table('services')
     op.drop_table('users')
+

@@ -108,3 +108,4 @@ async def test_slot_hold_model(db_session):
 
     assert hold.id is not None
     assert hold.expires_at > hold.start_ts
+

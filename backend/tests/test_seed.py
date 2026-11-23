@@ -75,3 +75,4 @@ async def test_seed_is_idempotent(db_session):
     assert first_run["services"] == second_run["services"] == 10
     assert first_run["stylists"] == second_run["stylists"] == 5
     assert first_run["bookings"] == second_run["bookings"]
+

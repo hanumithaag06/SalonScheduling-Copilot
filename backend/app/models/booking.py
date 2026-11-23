@@ -67,3 +67,4 @@ class SlotHold(Base):
 
     user = relationship("User", back_populates="slot_holds")
     stylist = relationship("Stylist", back_populates="slot_holds")
+

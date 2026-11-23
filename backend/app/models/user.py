@@ -27,3 +27,4 @@ class User(Base):
     slot_holds = relationship("SlotHold", back_populates="user", cascade="all, delete-orphan")
     waitlist_entries = relationship("Waitlist", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+

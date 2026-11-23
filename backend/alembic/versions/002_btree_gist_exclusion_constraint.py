@@ -39,3 +39,4 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.execute("ALTER TABLE bookings DROP CONSTRAINT IF EXISTS no_overlapping_confirmed_bookings;")
+
