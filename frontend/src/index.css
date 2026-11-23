@@ -1,0 +1,3 @@
+/* Why: Entry-point CSS — imports Tailwind v4 (the single @import is all
+   Tailwind v4 needs; no tailwind.config.js required). */
+@import "tailwindcss";
