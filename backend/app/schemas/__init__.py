@@ -10,6 +10,16 @@ from app.schemas.hold import HoldCreate, HoldOut
 from app.schemas.recommend import ScoreBreakdownOut, RecommendationOut
 from app.schemas.notification import NotificationOut
 from app.schemas.waitlist import WaitlistCreate, WaitlistOut
+from app.schemas.admin import (
+    DashboardOut,
+    AdminBookingOut,
+    AdminBookingCreate,
+    BookingsPerDay,
+    RevenuePerService,
+    StylistUtilization,
+    PeakHour,
+    HeatmapCell,
+)
 
 __all__ = [
     "UserRegister",
@@ -38,4 +48,12 @@ __all__ = [
     "NotificationOut",
     "WaitlistCreate",
     "WaitlistOut",
+    "DashboardOut",
+    "AdminBookingOut",
+    "AdminBookingCreate",
+    "BookingsPerDay",
+    "RevenuePerService",
+    "StylistUtilization",
+    "PeakHour",
+    "HeatmapCell",
 ]
