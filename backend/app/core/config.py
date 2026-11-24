@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str = "Stylify Salon"
     SMTP_TLS: bool = True
 
+    # ── AI Assistant (LLM) ──
+    LLM_API_KEY: str | None = None
+    LLM_API_URL: str = "https://generativelanguage.googleapis.com/v1beta/chat/completions"
+    LLM_MODEL: str = "gemini-1.5-flash"
+
     model_config = SettingsConfigDict(
         env_file=".env",        # auto-load .env from working directory
         env_file_encoding="utf-8",

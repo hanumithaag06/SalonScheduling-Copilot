@@ -20,6 +20,12 @@ from app.schemas.admin import (
     PeakHour,
     HeatmapCell,
 )
+from app.schemas.assistant import (
+    AssistantParseRequest,
+    AssistantParseResponse,
+    AssistantSuggestRequest,
+    AssistantSuggestResponse,
+)
 
 __all__ = [
     "UserRegister",
@@ -56,4 +62,8 @@ __all__ = [
     "StylistUtilization",
     "PeakHour",
     "HeatmapCell",
+    "AssistantParseRequest",
+    "AssistantParseResponse",
+    "AssistantSuggestRequest",
+    "AssistantSuggestResponse",
 ]

@@ -25,6 +25,7 @@ from app.routers.recommend import router as recommend_router
 from app.routers.notifications import router as notifications_router
 from app.routers.waitlist import router as waitlist_router
 from app.routers.admin import router as admin_router
+from app.routers.assistant import router as assistant_router
 
 
 @asynccontextmanager
@@ -41,7 +42,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Stylify API",
     description="Intelligent Salon Scheduling and Appointment Management Platform",
-    version="0.8.0",
+    version="0.9.0",
     lifespan=lifespan,
 )
 
@@ -71,6 +72,7 @@ app.include_router(recommend_router)
 app.include_router(notifications_router)
 app.include_router(waitlist_router)
 app.include_router(admin_router)
+app.include_router(assistant_router)
 
 
 @app.get("/health", tags=["ops"])
