@@ -1,6 +1,7 @@
-# Why: Application entry point. Configures FastAPI, registers CORS,
-# registers the global error handlers, and mounts all API routers.
+# Why: Application entry point. Configures FastAPI with lifespan background jobs,
+# CORS, unified exception handlers, and mounts all application routers.
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -12,17 +13,32 @@ from app.core.errors import (
     validation_exception_handler,
     http_exception_handler,
 )
+from app.jobs.scheduler import start_scheduler, stop_scheduler
 from app.routers.auth import router as auth_router
 from app.routers.services import router as services_router
 from app.routers.stylists import router as stylists_router
 from app.routers.schedule import router as schedule_router
 from app.routers.slots import router as slots_router
 from app.routers.bookings import router as bookings_router
+from app.routers.holds import router as holds_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifecycle hook starting and stopping APScheduler background maintenance jobs."""
+    # Only start scheduler if not in testing / when explicitly enabled
+    if settings.APP_ENV != "test":
+        start_scheduler()
+    yield
+    if settings.APP_ENV != "test":
+        stop_scheduler()
+
 
 app = FastAPI(
     title="Stylify API",
     description="Intelligent Salon Scheduling and Appointment Management Platform",
-    version="0.4.0",
+    version="0.5.0",
+    lifespan=lifespan,
 )
 
 # ── CORS Middleware ──
@@ -46,6 +62,7 @@ app.include_router(stylists_router)
 app.include_router(schedule_router)
 app.include_router(slots_router)
 app.include_router(bookings_router)
+app.include_router(holds_router)
 
 
 @app.get("/health", tags=["ops"])

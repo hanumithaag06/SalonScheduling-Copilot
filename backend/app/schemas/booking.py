@@ -10,6 +10,7 @@ class BookingCreate(BaseModel):
     service_id: int = Field(..., description="ID of service to book")
     stylist_id: int = Field(..., description="ID of stylist performing service")
     start_ts: datetime = Field(..., description="Appointment start timestamp in UTC")
+    hold_id: int | None = Field(default=None, description="Optional active pre-booking hold ID to convert")
     notes: str | None = Field(default=None, max_length=500, description="Optional customer notes")
 
 

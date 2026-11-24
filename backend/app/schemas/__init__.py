@@ -6,6 +6,7 @@ from app.schemas.stylist import StylistCreate, StylistUpdate, StylistOut, Stylis
 from app.schemas.schedule import WorkingHoursCreate, WorkingHoursOut, TimeOffCreate, TimeOffOut
 from app.schemas.slot import SlotOut
 from app.schemas.booking import BookingCreate, BookingReschedule, BookingOut
+from app.schemas.hold import HoldCreate, HoldOut
 
 __all__ = [
     "UserRegister",
@@ -27,4 +28,6 @@ __all__ = [
     "BookingCreate",
     "BookingReschedule",
     "BookingOut",
+    "HoldCreate",
+    "HoldOut",
 ]

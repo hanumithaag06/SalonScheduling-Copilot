@@ -57,6 +57,20 @@ async def create_booking(
             code="PAST_SLOT"
         )
 
+    # 1.1 Verify active hold if hold_id was supplied
+    active_hold: SlotHold | None = None
+    if payload.hold_id:
+        h_stmt = select(SlotHold).where(SlotHold.id == payload.hold_id)
+        active_hold = (await db.execute(h_stmt)).scalar_one_or_none()
+        if not active_hold:
+            raise NotFoundException(detail="Slot hold reservation not found", code="HOLD_NOT_FOUND")
+        if _ensure_utc(active_hold.expires_at) <= now_utc:
+            raise BadRequestException(detail="Slot hold reservation has expired", code="HOLD_EXPIRED")
+        if active_hold.user_id != user.id:
+            raise ForbiddenException(detail="Cannot convert a hold belonging to another customer", code="FORBIDDEN")
+        if active_hold.stylist_id != payload.stylist_id or _ensure_utc(active_hold.start_ts) != start_ts:
+            raise BadRequestException(detail="Hold does not match selected stylist and time slot", code="HOLD_MISMATCH")
+
     # 2. Check maximum active bookings per customer
     active_count_stmt = select(func.count()).select_from(Booking).where(
         Booking.user_id == user.id,
@@ -178,6 +192,19 @@ async def create_booking(
         )
         db.add(booking)
         await db.flush()
+
+        # Convert/release the hold now that the booking is confirmed
+        if active_hold:
+            await db.delete(active_hold)
+        else:
+            user_hold_stmt = select(SlotHold).where(
+                SlotHold.user_id == user.id,
+                SlotHold.stylist_id == payload.stylist_id,
+                SlotHold.start_ts == start_ts
+            )
+            user_hold = (await db.execute(user_hold_stmt)).scalar_one_or_none()
+            if user_hold:
+                await db.delete(user_hold)
 
         # 12. Create Audit Log entry
         audit = AuditLog(
