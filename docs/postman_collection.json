@@ -1,0 +1,544 @@
+{
+  "info": {
+    "_postman_id": "stylify-api-v1-collection",
+    "name": "Stylify Salon Scheduling API",
+    "description": "Complete Postman collection for Stylify: Intelligent Salon Scheduling and Appointment Platform (College Project PRJ-012). Includes authentication, slots calculation, holds, bookings, recommendations, waitlist cascade, AI assistant, and admin operations.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "customerToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. System Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane.doe@example.com\",\n  \"phone\": \"+12025550188\",\n  \"password\": \"password123\",\n  \"role\": \"customer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access_token) {",
+                  "    pm.collectionVariables.set('customerToken', jsonData.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "username", "value": "jane.doe@example.com", "type": "text" },
+                { "key": "password", "value": "password123", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access_token) {",
+                  "    pm.collectionVariables.set('adminToken', jsonData.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "username", "value": "admin@stylify.com", "type": "text" },
+                { "key": "password", "value": "admin123", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User Profile (/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Services & Stylists Catalog",
+      "item": [
+        {
+          "name": "List Active Services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/services",
+              "host": ["{{baseUrl}}"],
+              "path": ["services"]
+            }
+          }
+        },
+        {
+          "name": "List Stylists",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stylists",
+              "host": ["{{baseUrl}}"],
+              "path": ["stylists"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Slot Calculation & Recommendations",
+      "item": [
+        {
+          "name": "Get Available 15-min Slots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/slots?service_id=1&date=2026-12-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["slots"],
+              "query": [
+                { "key": "service_id", "value": "1" },
+                { "key": "date", "value": "2026-12-01" },
+                { "key": "stylist_id", "value": "1", "disabled": true },
+                { "key": "max_price", "value": "50", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Ranked Recommendations with Reasons",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recommend?service_id=1&date=2026-12-01&preferred_time=morning",
+              "host": ["{{baseUrl}}"],
+              "path": ["recommend"],
+              "query": [
+                { "key": "service_id", "value": "1" },
+                { "key": "date", "value": "2026-12-01" },
+                { "key": "preferred_time", "value": "morning" },
+                { "key": "max_price", "value": "60", "disabled": true }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Pre-Booking Holds",
+      "item": [
+        {
+          "name": "Create 5-Minute Slot Hold",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stylist_id\": 1,\n  \"service_id\": 1,\n  \"slot_time\": \"2026-12-01T10:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/holds",
+              "host": ["{{baseUrl}}"],
+              "path": ["holds"]
+            }
+          }
+        },
+        {
+          "name": "Delete Slot Hold",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/holds/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["holds", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Bookings Lifecycle",
+      "item": [
+        {
+          "name": "Create Confirmed Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"service_id\": 1,\n  \"stylist_id\": 1,\n  \"start_ts\": \"2026-12-01T10:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings"]
+            }
+          }
+        },
+        {
+          "name": "List My Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/me?status=confirmed",
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings", "me"],
+              "query": [
+                { "key": "status", "value": "confirmed" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reschedule Booking",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_start_ts\": \"2026-12-01T14:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bookings/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings", "1"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Booking (triggers waitlist cascade)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/1/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings", "1", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Waitlist & In-App Notifications",
+      "item": [
+        {
+          "name": "Join Waitlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"service_id\": 1,\n  \"date\": \"2026-12-01\",\n  \"time_pref\": \"morning\",\n  \"stylist_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/waitlist",
+              "host": ["{{baseUrl}}"],
+              "path": ["waitlist"]
+            }
+          }
+        },
+        {
+          "name": "Get My Waitlist Entries",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/waitlist/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["waitlist", "me"]
+            }
+          }
+        },
+        {
+          "name": "Claim 15-Minute Offered Slot",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/waitlist/1/claim",
+              "host": ["{{baseUrl}}"],
+              "path": ["waitlist", "1", "claim"]
+            }
+          }
+        },
+        {
+          "name": "List In-App Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/1/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "1", "read"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. AI Assistant Copilot",
+      "item": [
+        {
+          "name": "Parse Natural Language Intent",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Can I book balayage highlights next Monday under $160?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assistant/parse",
+              "host": ["{{baseUrl}}"],
+              "path": ["assistant", "parse"]
+            }
+          }
+        },
+        {
+          "name": "Suggest Appointment Options & Reasons",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Classic haircut tomorrow morning under $50\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assistant/suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["assistant", "suggest"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Admin Portal Operations",
+      "item": [
+        {
+          "name": "Admin Dashboard Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Admin Bookings Ledger",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/bookings?status=confirmed",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "bookings"],
+              "query": [
+                { "key": "status", "value": "confirmed" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export Bookings CSV",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/export/bookings.csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "export", "bookings.csv"]
+            }
+          }
+        },
+        {
+          "name": "Admin Book on Behalf of Client (Proxy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": 2,\n  \"service_id\": 1,\n  \"stylist_id\": 1,\n  \"start_ts\": \"2026-12-02T11:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "Admin Cancel Booking (Override Window)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Stylist emergency schedule rescheduling\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/bookings/1/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "bookings", "1", "cancel"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
