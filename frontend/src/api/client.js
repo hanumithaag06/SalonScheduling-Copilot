@@ -1,14 +1,14 @@
-// Why: Centralized Axios instance. Every API call imports this instead of
-// raw axios, so the base URL and auth headers are set in one place.
+// Why: Centralized Axios client configured with VITE_API_URL and auth header injection.
+// Automatically adds Bearer token to requests and clears stale tokens on 401s.
 
 import axios from 'axios'
 
+const baseURL = import.meta.env.VITE_API_URL || '/api'
+
 const api = axios.create({
-  baseURL: '/api',  // Vite proxy rewrites /api → http://localhost:8000
+  baseURL,
 })
 
-// Request interceptor: attaches the JWT token from localStorage to every
-// outgoing request so the backend knows who the user is.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {
@@ -17,5 +17,17 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-export default api
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      if (localStorage.getItem('token')) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+      }
+    }
+    return Promise.reject(error)
+  }
+)
 
+export default api
