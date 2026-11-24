@@ -94,3 +94,4 @@ async def delete_service(
     service.is_active = False
     await db.commit()
     return {"detail": "Service deactivated successfully", "code": "SERVICE_DEACTIVATED"}
+

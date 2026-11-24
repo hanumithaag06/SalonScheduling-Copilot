@@ -4,6 +4,7 @@ from app.schemas.auth import UserRegister, UserLogin, UserOut, TokenResponse
 from app.schemas.service import ServiceCreate, ServiceUpdate, ServiceOut
 from app.schemas.stylist import StylistCreate, StylistUpdate, StylistOut, StylistServiceAssign
 from app.schemas.schedule import WorkingHoursCreate, WorkingHoursOut, TimeOffCreate, TimeOffOut
+from app.schemas.slot import SlotOut
 
 __all__ = [
     "UserRegister",
@@ -21,4 +22,5 @@ __all__ = [
     "WorkingHoursOut",
     "TimeOffCreate",
     "TimeOffOut",
+    "SlotOut",
 ]

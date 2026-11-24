@@ -68,3 +68,4 @@ async def require_admin(current_user: User = Depends(get_current_user)) -> User:
             code="FORBIDDEN"
         )
     return current_user
+

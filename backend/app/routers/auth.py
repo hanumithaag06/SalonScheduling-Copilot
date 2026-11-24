@@ -77,3 +77,4 @@ async def get_me(current_user: User = Depends(get_current_user)):
     Returns the profile of the currently logged-in user.
     """
     return UserOut.model_validate(current_user)
+

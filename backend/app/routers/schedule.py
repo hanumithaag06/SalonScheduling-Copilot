@@ -150,3 +150,4 @@ async def delete_time_off(
     await db.delete(to)
     await db.commit()
     return {"detail": "Time-off entry deleted", "code": "TIME_OFF_DELETED"}
+

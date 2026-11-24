@@ -167,3 +167,4 @@ async def test_admin_working_hours_and_time_off(client, admin_headers, customer_
     )
     assert blocked_to.status_code == 403
     assert blocked_to.json()["code"] == "FORBIDDEN"
+

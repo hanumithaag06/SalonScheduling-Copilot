@@ -118,3 +118,4 @@ async def test_register_invalid_phone_pattern(client):
     assert response.status_code == 422
     data = response.json()
     assert data["code"] == "VALIDATION_ERROR"
+

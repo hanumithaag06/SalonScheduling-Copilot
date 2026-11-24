@@ -47,3 +47,4 @@ class TimeOffOut(BaseModel):
     reason: str
 
     model_config = ConfigDict(from_attributes=True)
+

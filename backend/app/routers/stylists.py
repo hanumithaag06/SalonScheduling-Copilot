@@ -133,3 +133,4 @@ async def assign_stylist_services(
         select(Stylist).options(selectinload(Stylist.services)).where(Stylist.id == stylist_id)
     )
     return res.scalar_one()
+

@@ -30,3 +30,4 @@ class StylistOut(StylistBase):
 
 class StylistServiceAssign(BaseModel):
     service_ids: list[int] = Field(..., description="Complete list of service IDs for this stylist")
+
