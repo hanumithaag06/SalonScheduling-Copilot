@@ -17,3 +17,4 @@ async def delete_expired_holds(session: AsyncSession) -> int:
     result = await session.execute(stmt)
     await session.commit()
     return result.rowcount or 0
+

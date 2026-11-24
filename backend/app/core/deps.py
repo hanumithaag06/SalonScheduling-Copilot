@@ -57,6 +57,30 @@ async def get_current_user(
     return user
 
 
+async def get_optional_current_user(
+    token: str | None = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """
+    Attempts to retrieve the authenticated user from JWT token if provided.
+    Returns None if token is omitted, invalid, or expired, allowing guest access.
+    """
+    if not token:
+        return None
+
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        email: str | None = payload.get("sub")
+        if email is None:
+            return None
+    except JWTError:
+        return None
+
+    stmt = select(User).where(User.email == email)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
 async def require_admin(current_user: User = Depends(get_current_user)) -> User:
     """
     Ensures the authenticated user has the 'admin' role.

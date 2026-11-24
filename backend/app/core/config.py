@@ -22,6 +22,16 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     DEBUG: bool = True
 
+    # ── Email / SMTP ──
+    EMAIL_BACKEND: str = "console"  # "console" | "smtp"
+    SMTP_HOST: str = "sandbox.smtp.mailtrap.io"
+    SMTP_PORT: int = 2525
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "noreply@stylify.salon"
+    SMTP_FROM_NAME: str = "Stylify Salon"
+    SMTP_TLS: bool = True
+
     model_config = SettingsConfigDict(
         env_file=".env",        # auto-load .env from working directory
         env_file_encoding="utf-8",

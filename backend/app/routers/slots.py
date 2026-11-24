@@ -98,10 +98,6 @@ async def get_available_slots(
         TimeOff.end_ts > day_start
     )
     to_records = (await db.execute(to_stmt)).scalars().all()
-    time_off_intervals = [
-        TimeInterval(start_ts=_ensure_utc(to.start_ts), end_ts=_ensure_utc(to.end_ts))
-        for to in to_records
-    ]
 
     # 7. Fetch Confirmed Bookings overlapping the day
     bk_stmt = select(Booking).where(
@@ -111,10 +107,6 @@ async def get_available_slots(
         Booking.end_ts > day_start
     )
     bk_records = (await db.execute(bk_stmt)).scalars().all()
-    booking_intervals = [
-        TimeInterval(start_ts=_ensure_utc(b.start_ts), end_ts=_ensure_utc(b.end_ts))
-        for b in bk_records
-    ]
 
     # 8. Fetch Active Holds (expires_at > now) overlapping the day
     hd_stmt = select(SlotHold).where(
@@ -124,25 +116,44 @@ async def get_available_slots(
         SlotHold.end_ts > day_start
     )
     hd_records = (await db.execute(hd_stmt)).scalars().all()
-    hold_intervals = [
-        TimeInterval(start_ts=_ensure_utc(h.start_ts), end_ts=_ensure_utc(h.end_ts))
-        for h in hd_records
-    ]
 
-    # 9. Execute pure slot calculation engine
-    raw_slots = find_available_slots(
-        service_duration_min=service.duration_min,
-        query_date=date,
-        eligible_stylists=stylist_info_list,
-        working_hours=working_shifts,
-        time_off=time_off_intervals,
-        confirmed_bookings=booking_intervals,
-        active_holds=hold_intervals,
-        current_time=now_utc,
-        lead_time_min=lead_time_min,
-        buffer_min=buffer_min,
-        step_min=15,
-    )
+    # 9. Execute pure slot calculation engine per stylist
+    raw_slots = []
+    for st_info in stylist_info_list:
+        st_shifts = [wh for wh in working_shifts if wh.stylist_id == st_info.id]
+        st_time_off = [
+            TimeInterval(start_ts=_ensure_utc(to.start_ts), end_ts=_ensure_utc(to.end_ts))
+            for to in to_records
+            if to.stylist_id == st_info.id
+        ]
+        st_bookings = [
+            TimeInterval(start_ts=_ensure_utc(b.start_ts), end_ts=_ensure_utc(b.end_ts))
+            for b in bk_records
+            if b.stylist_id == st_info.id
+        ]
+        st_holds = [
+            TimeInterval(start_ts=_ensure_utc(h.start_ts), end_ts=_ensure_utc(h.end_ts))
+            for h in hd_records
+            if h.stylist_id == st_info.id
+        ]
+
+        st_slots = find_available_slots(
+            service_duration_min=service.duration_min,
+            query_date=date,
+            eligible_stylists=[st_info],
+            working_hours=st_shifts,
+            time_off=st_time_off,
+            confirmed_bookings=st_bookings,
+            active_holds=st_holds,
+            current_time=now_utc,
+            lead_time_min=lead_time_min,
+            buffer_min=buffer_min,
+            step_min=15,
+        )
+        raw_slots.extend(st_slots)
+
+    # Sort slots chronologically
+    raw_slots.sort(key=lambda s: (s.start_ts, s.stylist_id))
 
     # 10. Map to Pydantic responses with price
     return [

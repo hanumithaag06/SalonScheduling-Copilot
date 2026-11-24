@@ -2,7 +2,7 @@
 # Uses get_current_user dependency and delegates business logic to booking_service.
 
 from datetime import date, datetime, time, timezone
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,6 +19,7 @@ router = APIRouter(prefix="/bookings", tags=["bookings"])
 @router.post("", response_model=BookingOut, status_code=status.HTTP_201_CREATED)
 async def book_appointment(
     payload: BookingCreate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -26,13 +27,14 @@ async def book_appointment(
     Creates a new confirmed booking. Validates operating hours, customer overlaps,
     max active appointments, and catches database exclusion violations (409 SLOT_TAKEN).
     """
-    return await create_booking(payload=payload, user=current_user, db=db)
+    return await create_booking(payload=payload, user=current_user, db=db, background_tasks=background_tasks)
 
 
 @router.put("/{booking_id}", response_model=BookingOut)
 async def update_booking_time(
     booking_id: int,
     payload: BookingReschedule,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -40,19 +42,21 @@ async def update_booking_time(
     Reschedules an existing confirmed booking.
     Enforces a strict 2-hour minimum lead window before current start time.
     """
-    return await reschedule_booking(booking_id=booking_id, payload=payload, user=current_user, db=db)
+    return await reschedule_booking(booking_id=booking_id, payload=payload, user=current_user, db=db, background_tasks=background_tasks)
 
 
 @router.post("/{booking_id}/cancel", response_model=BookingOut)
 async def cancel_appointment(
     booking_id: int,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Cancels a confirmed booking if within the permitted cancellation policy (>2 hours before start).
+    Automatically triggers waitlist cascade if any matching entries exist.
     """
-    return await cancel_booking(booking_id=booking_id, user=current_user, db=db)
+    return await cancel_booking(booking_id=booking_id, user=current_user, db=db, background_tasks=background_tasks)
 
 
 @router.get("/me", response_model=list[BookingOut])

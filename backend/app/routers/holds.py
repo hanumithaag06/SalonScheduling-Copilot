@@ -162,3 +162,4 @@ async def release_slot_hold(
     await db.delete(hold)
     await db.commit()
     return {"detail": "Slot hold released successfully", "code": "HOLD_RELEASED"}
+

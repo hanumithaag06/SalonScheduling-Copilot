@@ -7,6 +7,9 @@ from app.schemas.schedule import WorkingHoursCreate, WorkingHoursOut, TimeOffCre
 from app.schemas.slot import SlotOut
 from app.schemas.booking import BookingCreate, BookingReschedule, BookingOut
 from app.schemas.hold import HoldCreate, HoldOut
+from app.schemas.recommend import ScoreBreakdownOut, RecommendationOut
+from app.schemas.notification import NotificationOut
+from app.schemas.waitlist import WaitlistCreate, WaitlistOut
 
 __all__ = [
     "UserRegister",
@@ -30,4 +33,9 @@ __all__ = [
     "BookingOut",
     "HoldCreate",
     "HoldOut",
+    "ScoreBreakdownOut",
+    "RecommendationOut",
+    "NotificationOut",
+    "WaitlistCreate",
+    "WaitlistOut",
 ]

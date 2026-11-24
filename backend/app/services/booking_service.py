@@ -6,6 +6,7 @@
 import asyncio
 import json
 from datetime import datetime, timedelta, timezone
+from fastapi import BackgroundTasks
 from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
@@ -22,6 +23,12 @@ from app.models import (
     WorkingHours, TimeOff, SlotHold, AuditLog, User
 )
 from app.schemas.booking import BookingCreate, BookingReschedule
+from app.services.notification_service import create_notification
+from app.services.email_service import (
+    build_booking_confirmation_content,
+    build_booking_reschedule_content,
+    build_booking_cancellation_content,
+)
 
 MAX_ACTIVE_BOOKINGS_PER_USER = 5
 MIN_CANCELLATION_WINDOW_HOURS = 2
@@ -41,6 +48,7 @@ async def create_booking(
     payload: BookingCreate,
     user: User,
     db: AsyncSession,
+    background_tasks: BackgroundTasks | None = None,
 ) -> Booking:
     """
     Creates a new confirmed appointment after validating all business constraints.
@@ -237,7 +245,31 @@ async def create_booking(
         .options(selectinload(Booking.service), selectinload(Booking.stylist))
         .where(Booking.id == booking.id)
     )
-    return res.scalar_one()
+    booking = res.scalar_one()
+
+    # 14. Send confirmation notification + email (after commit, non-blocking)
+    service_name = booking.service.name if booking.service else "Service"
+    stylist_name = booking.stylist.name if booking.stylist else "Stylist"
+    subject, body = build_booking_confirmation_content(
+        customer_name=user.name,
+        service_name=service_name,
+        stylist_name=stylist_name,
+        start_ts_str=_ensure_utc(booking.start_ts).strftime("%Y-%m-%d %H:%M"),
+        end_ts_str=_ensure_utc(booking.end_ts).strftime("%H:%M"),
+    )
+    await create_notification(
+        db=db,
+        user_id=user.id,
+        type="booking_confirmed",
+        message=body,
+        booking_id=booking.id,
+        to_email=user.email,
+        email_subject=subject,
+        background_tasks=background_tasks,
+    )
+    await db.commit()
+
+    return booking
 
 
 async def reschedule_booking(
@@ -245,6 +277,7 @@ async def reschedule_booking(
     payload: BookingReschedule,
     user: User,
     db: AsyncSession,
+    background_tasks: BackgroundTasks | None = None,
 ) -> Booking:
     """
     Reschedules an existing confirmed booking to a new start time.
@@ -375,6 +408,29 @@ async def reschedule_booking(
             )
 
     await db.refresh(booking)
+
+    # Send reschedule notification + email
+    service_name = booking.service.name if booking.service else "Service"
+    stylist_name = booking.stylist.name if booking.stylist else "Stylist"
+    subject, body = build_booking_reschedule_content(
+        customer_name=user.name,
+        service_name=service_name,
+        stylist_name=stylist_name,
+        new_start_ts_str=_ensure_utc(booking.start_ts).strftime("%Y-%m-%d %H:%M"),
+        new_end_ts_str=_ensure_utc(booking.end_ts).strftime("%H:%M"),
+    )
+    await create_notification(
+        db=db,
+        user_id=user.id,
+        type="booking_rescheduled",
+        message=body,
+        booking_id=booking.id,
+        to_email=user.email,
+        email_subject=subject,
+        background_tasks=background_tasks,
+    )
+    await db.commit()
+
     return booking
 
 
@@ -382,10 +438,11 @@ async def cancel_booking(
     booking_id: int,
     user: User,
     db: AsyncSession,
+    background_tasks: BackgroundTasks | None = None,
 ) -> Booking:
     """
     Cancels a confirmed appointment. Enforces 2-hour minimum cancellation window.
-    Logs audit event and frees the slot.
+    Logs audit event, sends cancellation notification, then triggers waitlist cascade.
     """
     now_utc = datetime.now(timezone.utc)
 
@@ -414,6 +471,10 @@ async def cancel_booking(
             code="CANCELLATION_WINDOW_EXPIRED"
         )
 
+    service_name = booking.service.name if booking.service else "Service"
+    stylist_id = booking.stylist_id
+    start_ts = _ensure_utc(booking.start_ts)
+
     booking.status = "cancelled"
 
     # Audit Log
@@ -426,6 +487,35 @@ async def cancel_booking(
     )
     db.add(audit)
 
+    # Send cancellation notification + email
+    subject, body = build_booking_cancellation_content(
+        customer_name=user.name,
+        service_name=service_name,
+        start_ts_str=start_ts.strftime("%Y-%m-%d %H:%M"),
+    )
+    await create_notification(
+        db=db,
+        user_id=user.id,
+        type="booking_cancelled",
+        message=body,
+        booking_id=booking.id,
+        to_email=user.email,
+        email_subject=subject,
+        background_tasks=background_tasks,
+    )
+
     await db.commit()
     await db.refresh(booking)
+
+    # Trigger waitlist cascade: offer freed slot to first eligible waiter
+    # (imported here to avoid circular imports — waitlist_service uses booking models)
+    from app.services.waitlist_service import offer_vacated_slot
+    await offer_vacated_slot(
+        service_id=booking.service_id,
+        stylist_id=stylist_id,
+        slot_start=start_ts,
+        db=db,
+        background_tasks=background_tasks,
+    )
+
     return booking

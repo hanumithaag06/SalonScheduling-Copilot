@@ -21,6 +21,9 @@ from app.routers.schedule import router as schedule_router
 from app.routers.slots import router as slots_router
 from app.routers.bookings import router as bookings_router
 from app.routers.holds import router as holds_router
+from app.routers.recommend import router as recommend_router
+from app.routers.notifications import router as notifications_router
+from app.routers.waitlist import router as waitlist_router
 
 
 @asynccontextmanager
@@ -37,7 +40,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Stylify API",
     description="Intelligent Salon Scheduling and Appointment Management Platform",
-    version="0.5.0",
+    version="0.7.0",
     lifespan=lifespan,
 )
 
@@ -63,6 +66,9 @@ app.include_router(schedule_router)
 app.include_router(slots_router)
 app.include_router(bookings_router)
 app.include_router(holds_router)
+app.include_router(recommend_router)
+app.include_router(notifications_router)
+app.include_router(waitlist_router)
 
 
 @app.get("/health", tags=["ops"])

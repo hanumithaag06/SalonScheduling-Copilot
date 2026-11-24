@@ -234,3 +234,4 @@ async def test_apscheduler_cleanup_purges_only_expired_holds(db_session, hold_se
     remaining = (await db_session.execute(select(SlotHold))).scalars().all()
     assert len(remaining) == 1
     assert remaining[0].id == h_act.id
+
