@@ -21,6 +21,12 @@ class StylistUpdate(BaseModel):
     service_ids: list[int] | None = None
 
 
+class StylistSimpleOut(StylistBase):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class StylistOut(StylistBase):
     id: int
     services: list[ServiceOut] = Field(default_factory=list)

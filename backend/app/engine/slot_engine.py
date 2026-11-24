@@ -14,6 +14,13 @@ class TimeInterval:
     start_ts: datetime
     end_ts: datetime
 
+    def __post_init__(self):
+        """Ensures both interval boundaries are timezone-aware in UTC."""
+        if self.start_ts.tzinfo is None:
+            object.__setattr__(self, "start_ts", self.start_ts.replace(tzinfo=timezone.utc))
+        if self.end_ts.tzinfo is None:
+            object.__setattr__(self, "end_ts", self.end_ts.replace(tzinfo=timezone.utc))
+
     def overlaps(self, other: "TimeInterval") -> bool:
         """Two half-open intervals [A, B) and [C, D) overlap if A < D and C < B."""
         return self.start_ts < other.end_ts and other.start_ts < self.end_ts
@@ -199,3 +206,4 @@ def find_available_slots(
 
     # Sort slots chronologically, then by stylist id
     return sorted(available_slots, key=lambda s: (s.start_ts, s.stylist_id))
+

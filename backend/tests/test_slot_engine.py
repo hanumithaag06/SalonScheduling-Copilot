@@ -215,3 +215,4 @@ def test_lead_time_and_buffer():
         assert not (
             datetime(2026, 6, 1, 11, 30, tzinfo=timezone.utc) <= s.start_ts < datetime(2026, 6, 1, 12, 15, tzinfo=timezone.utc)
         )
+

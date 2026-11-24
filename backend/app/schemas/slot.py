@@ -14,3 +14,4 @@ class SlotOut(BaseModel):
     price: Decimal
 
     model_config = ConfigDict(from_attributes=True)
+

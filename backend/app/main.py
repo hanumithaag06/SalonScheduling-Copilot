@@ -17,11 +17,12 @@ from app.routers.services import router as services_router
 from app.routers.stylists import router as stylists_router
 from app.routers.schedule import router as schedule_router
 from app.routers.slots import router as slots_router
+from app.routers.bookings import router as bookings_router
 
 app = FastAPI(
     title="Stylify API",
     description="Intelligent Salon Scheduling and Appointment Management Platform",
-    version="0.3.0",
+    version="0.4.0",
 )
 
 # ── CORS Middleware ──
@@ -44,6 +45,7 @@ app.include_router(services_router)
 app.include_router(stylists_router)
 app.include_router(schedule_router)
 app.include_router(slots_router)
+app.include_router(bookings_router)
 
 
 @app.get("/health", tags=["ops"])

@@ -21,6 +21,12 @@ from app.schemas.slot import SlotOut
 router = APIRouter(prefix="/slots", tags=["slots"])
 
 
+def _ensure_utc(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 @router.get("", response_model=list[SlotOut])
 async def get_available_slots(
     service_id: int = Query(..., description="ID of the service to book"),
@@ -93,7 +99,7 @@ async def get_available_slots(
     )
     to_records = (await db.execute(to_stmt)).scalars().all()
     time_off_intervals = [
-        TimeInterval(start_ts=to.start_ts, end_ts=to.end_ts)
+        TimeInterval(start_ts=_ensure_utc(to.start_ts), end_ts=_ensure_utc(to.end_ts))
         for to in to_records
     ]
 
@@ -106,7 +112,7 @@ async def get_available_slots(
     )
     bk_records = (await db.execute(bk_stmt)).scalars().all()
     booking_intervals = [
-        TimeInterval(start_ts=b.start_ts, end_ts=b.end_ts)
+        TimeInterval(start_ts=_ensure_utc(b.start_ts), end_ts=_ensure_utc(b.end_ts))
         for b in bk_records
     ]
 
@@ -119,7 +125,7 @@ async def get_available_slots(
     )
     hd_records = (await db.execute(hd_stmt)).scalars().all()
     hold_intervals = [
-        TimeInterval(start_ts=h.start_ts, end_ts=h.end_ts)
+        TimeInterval(start_ts=_ensure_utc(h.start_ts), end_ts=_ensure_utc(h.end_ts))
         for h in hd_records
     ]
 
@@ -150,3 +156,4 @@ async def get_available_slots(
         )
         for s in raw_slots
     ]
+
