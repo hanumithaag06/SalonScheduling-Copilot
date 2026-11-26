@@ -5,6 +5,11 @@ import React, { useState, useEffect, useRef } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/react/timegrid'
 import dayGridPlugin from '@fullcalendar/react/daygrid'
+import themePlugin from '@fullcalendar/react/themes/breezy'
+
+import '@fullcalendar/react/skeleton.css'
+import '@fullcalendar/react/themes/breezy/theme.css'
+import '@fullcalendar/react/themes/breezy/palettes/indigo.css'
 import { XCircle, Calendar as CalendarIcon, User } from 'lucide-react'
 import api from '../../api/client'
 import { useToast } from '../../context/ToastContext'
@@ -132,7 +137,8 @@ export default function AdminCalendar() {
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <FullCalendar
             ref={calendarRef}
-            plugins={[timeGridPlugin, dayGridPlugin]}
+            plugins={[themePlugin, timeGridPlugin, dayGridPlugin]}
+            themeSystem="breezy"
             initialView="timeGridDay"
             events={events}
             eventClick={handleEventClick}

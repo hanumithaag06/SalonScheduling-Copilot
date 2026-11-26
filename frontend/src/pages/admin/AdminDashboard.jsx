@@ -69,16 +69,16 @@ const BENCHMARK_DATA = {
     { service_name: 'Blowout & Scalp Massage', revenue: 900, count: 18, color: '#ec4899' },
   ],
   peak_hours: [
-    { hour: '9:00', bookings: 8 },
-    { hour: '10:00', bookings: 19 },
-    { hour: '11:00', bookings: 24 },
-    { hour: '12:00', bookings: 15 },
-    { hour: '13:00', bookings: 12 },
-    { hour: '14:00', bookings: 18 },
-    { hour: '15:00', bookings: 22 },
-    { hour: '16:00', bookings: 26 },
-    { hour: '17:00', bookings: 28 },
-    { hour: '18:00', bookings: 12 },
+    { hour: '9:00', count: 8, bookings: 8 },
+    { hour: '10:00', count: 19, bookings: 19 },
+    { hour: '11:00', count: 24, bookings: 24 },
+    { hour: '12:00', count: 15, bookings: 15 },
+    { hour: '13:00', count: 12, bookings: 12 },
+    { hour: '14:00', count: 18, bookings: 18 },
+    { hour: '15:00', count: 22, bookings: 22 },
+    { hour: '16:00', count: 26, bookings: 26 },
+    { hour: '17:00', count: 28, bookings: 28 },
+    { hour: '18:00', count: 12, bookings: 12 },
   ],
   heatmap: [
     { weekday: 0, hour: 9, count: 1 }, { weekday: 0, hour: 10, count: 3 }, { weekday: 0, hour: 11, count: 4 }, { weekday: 0, hour: 12, count: 2 }, { weekday: 0, hour: 14, count: 3 }, { weekday: 0, hour: 15, count: 4 }, { weekday: 0, hour: 16, count: 5 }, { weekday: 0, hour: 17, count: 4 },
@@ -169,7 +169,7 @@ export default function AdminDashboard() {
 
   const peakHoursData = (activeData.peak_hours || []).map((item) => ({
     hour: item.hour.toString().includes(':') ? item.hour : `${item.hour}:00`,
-    bookings: item.count,
+    bookings: Number(item.count !== undefined ? item.count : (item.bookings || 0)),
   }))
 
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
