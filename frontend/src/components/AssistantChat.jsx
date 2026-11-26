@@ -3,7 +3,7 @@
 // Explicitly enforces that booking requires user review and cannot be created automatically.
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Sparkles, Send, X, Bot, ArrowRight, AlertCircle } from 'lucide-react'
+import { Sparkles, Send, X, Bot, ArrowRight, AlertCircle, RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 
@@ -11,6 +11,12 @@ export default function AssistantChat() {
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [contextIntent, setContextIntent] = useState({
+    service_id: null,
+    date: null,
+    time_pref: null,
+    max_price: null,
+  })
   const [messages, setMessages] = useState([
     {
       id: 'welcome',
@@ -27,6 +33,22 @@ export default function AssistantChat() {
     }
   }, [messages, isOpen])
 
+  const handleResetChat = () => {
+    setContextIntent({
+      service_id: null,
+      date: null,
+      time_pref: null,
+      max_price: null,
+    })
+    setMessages([
+      {
+        id: Date.now().toString(),
+        sender: 'assistant',
+        text: "Conversation reset. What service would you like to book?",
+      },
+    ])
+  }
+
   const handleSend = async (e) => {
     if (e) e.preventDefault()
     const query = input.trim()
@@ -38,8 +60,26 @@ export default function AssistantChat() {
     setLoading(true)
 
     try {
-      const resp = await api.post('/assistant/suggest', { message: query })
+      const payload = {
+        message: query,
+        service_id: contextIntent.service_id || undefined,
+        date: contextIntent.date || undefined,
+        time_pref: contextIntent.time_pref || undefined,
+        max_price: contextIntent.max_price || undefined,
+      }
+
+      const resp = await api.post('/assistant/suggest', payload)
       const data = resp.data
+
+      // Multi-turn conversational memory: preserve & accumulate extracted fields
+      if (data.intent) {
+        setContextIntent((prev) => ({
+          service_id: data.intent.service_id ?? prev.service_id,
+          date: data.intent.date ?? prev.date,
+          time_pref: data.intent.time_pref ?? prev.time_pref,
+          max_price: data.intent.max_price ?? prev.max_price,
+        }))
+      }
 
       const assistantMsg = {
         id: (Date.now() + 1).toString(),
@@ -67,15 +107,18 @@ export default function AssistantChat() {
     }
   }
 
-  const handleSelectSlot = (suggestion) => {
+  const handleSelectSlot = (suggestion, messageIntent) => {
     setIsOpen(false)
     const slotStart = suggestion.start_ts || suggestion.start_time
+    const targetServiceId = suggestion.service_id || messageIntent?.service_id || contextIntent.service_id
+    const targetDate = slotStart ? slotStart.split('T')[0] : (messageIntent?.date || contextIntent.date || '')
+
     // Navigate to /book with prefilled state from assistant recommendation
     navigate('/book', {
       state: {
-        serviceId: suggestion.service_id,
+        serviceId: targetServiceId,
         stylistId: suggestion.stylist_id,
-        date: slotStart ? slotStart.split('T')[0] : '',
+        date: targetDate,
         preselectedSlot: slotStart,
       },
     })
@@ -107,12 +150,22 @@ export default function AssistantChat() {
                 <p className="text-[11px] text-indigo-200">Natural language appointment finder</p>
               </div>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-white/80 hover:text-white p-1 rounded-lg transition"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleResetChat}
+                title="Start new search"
+                className="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition text-xs flex items-center gap-1"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span className="hidden sm:inline text-[11px]">Reset</span>
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Architectural Guard Banner */}
@@ -198,6 +251,27 @@ export default function AssistantChat() {
             )}
             <div ref={messagesEndRef} />
           </div>
+
+          {/* Context Intent Pill */}
+          {(contextIntent.date || contextIntent.service_id) && (
+            <div className="px-4 py-1.5 bg-indigo-50/80 border-t border-indigo-100 flex items-center justify-between text-xs text-indigo-900">
+              <div className="flex items-center gap-1.5 truncate">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <span className="font-medium text-[11px] truncate">
+                  Context: {contextIntent.date ? `Date: ${contextIntent.date}` : ''}
+                  {contextIntent.date && contextIntent.service_id ? ' • ' : ''}
+                  {contextIntent.service_id ? `Service #${contextIntent.service_id}` : ''}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleResetChat}
+                className="text-[11px] text-indigo-600 hover:text-indigo-900 font-semibold underline shrink-0 ml-2"
+              >
+                Clear
+              </button>
+            </div>
+          )}
 
           {/* Input Box */}
           <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-100 flex gap-2">

@@ -198,3 +198,22 @@ def test_missing_field_follow_up_questions():
     p3 = parse_booking_intent("tomorrow", reference_now=REF_NOW)
     assert "service" in p3.missing_fields
     assert "Which salon service would you like to book" in p3.follow_up_question
+
+
+def test_haircut_tomorrow_and_catalog_without_aliases():
+    """Validates user prompt 'i would like to book for haircut tomorrow' with bare database catalog."""
+    bare_catalog = [
+        {"id": 1, "name": "Classic Haircut"},
+        {"id": 2, "name": "Deluxe Cut & Styling"},
+        {"id": 3, "name": "Beard Grooming & Shape"},
+    ]
+    parsed = parse_booking_intent(
+        "i would like to book for haircut tomorrow",
+        catalog=bare_catalog,
+        reference_now=REF_NOW,
+    )
+    assert parsed.service_name == "Classic Haircut"
+    assert parsed.service_id == 1
+    assert parsed.date == date(2026, 12, 1)  # REF_NOW is Nov 30, so tomorrow is Dec 1
+    assert parsed.missing_fields == []
+    assert parsed.follow_up_question is None

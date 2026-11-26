@@ -12,18 +12,60 @@ from dateparser.search import search_dates
 from rapidfuzz import fuzz
 
 
+# Canonical salon synonyms mapping for accurate intent extraction
+SERVICE_SYNONYMS: dict[str, list[str]] = {
+    "classic haircut": [
+        "haircut", "hair cut", "cut", "classic cut", "men haircut", "women haircut",
+        "hair trimming", "trim", "mens haircut", "womens haircut", "fade", "buzz cut",
+        "standard haircut", "normal haircut", "haircuts", "hair cuts"
+    ],
+    "deluxe cut & styling": [
+        "deluxe cut", "styling", "cut and style", "blowout", "wash and cut",
+        "blow out", "style", "hair styling", "deluxe haircut", "wash and blow dry",
+        "wash and style", "blowdry", "hair blowout"
+    ],
+    "beard grooming & shape": [
+        "beard trim", "beard grooming", "beard", "shave", "beard shape", "mustache",
+        "beard styling", "facial hair", "shaving", "moustache"
+    ],
+    "full hair color": [
+        "hair color", "color", "hair dye", "coloring", "full color", "dye",
+        "dye hair", "coloring hair", "single process", "hair colour", "colour", "hair coloring"
+    ],
+    "balayage highlights": [
+        "balayage", "highlights", "ombre", "foils", "highlight", "streaks", "blonde balayage"
+    ],
+    "root touch-up": [
+        "root touchup", "roots", "touch up", "root touch-up", "root touch up", "gray coverage"
+    ],
+    "keratin smoothing treatment": [
+        "keratin", "smoothing", "brazilian blowout", "keratin treatment",
+        "straightening", "hair treatment", "keratin therapy"
+    ],
+    "scalp detox & massage": [
+        "scalp massage", "scalp detox", "head massage", "scalp treatment",
+        "head detox", "hair spa", "massage", "scalp care"
+    ],
+    "signature manicure": [
+        "manicure", "mani", "nails", "gel manicure", "nail art", "nail care", "manicures"
+    ],
+    "express spa pedicure": [
+        "pedicure", "pedi", "foot spa", "spa pedicure", "feet spa", "toenails", "pedicures"
+    ],
+}
+
 # Standard catalogue of salon service catalog items for fallback fuzzy matching
 DEFAULT_SERVICE_CATALOG = [
-    {"id": 1, "name": "Classic Haircut", "aliases": ["haircut", "cut", "hair cut", "classic cut", "men haircut", "women haircut"]},
-    {"id": 2, "name": "Deluxe Cut & Styling", "aliases": ["deluxe cut", "styling", "cut and style", "blowout", "wash and cut"]},
-    {"id": 3, "name": "Beard Grooming & Shape", "aliases": ["beard trim", "beard grooming", "beard", "shave", "beard shape"]},
-    {"id": 4, "name": "Full Hair Color", "aliases": ["hair color", "color", "hair dye", "coloring", "full color"]},
-    {"id": 5, "name": "Balayage Highlights", "aliases": ["balayage", "highlights", "ombre", "foils"]},
-    {"id": 6, "name": "Root Touch-Up", "aliases": ["root touchup", "roots", "touch up", "root touch-up", "root touch up"]},
-    {"id": 7, "name": "Keratin Smoothing Treatment", "aliases": ["keratin", "smoothing", "brazilian blowout", "keratin treatment"]},
-    {"id": 8, "name": "Scalp Detox & Massage", "aliases": ["scalp massage", "scalp detox", "head massage", "scalp treatment"]},
-    {"id": 9, "name": "Signature Manicure", "aliases": ["manicure", "mani", "nails", "gel manicure"]},
-    {"id": 10, "name": "Express Spa Pedicure", "aliases": ["pedicure", "pedi", "foot spa", "spa pedicure"]},
+    {"id": 1, "name": "Classic Haircut", "aliases": SERVICE_SYNONYMS["classic haircut"]},
+    {"id": 2, "name": "Deluxe Cut & Styling", "aliases": SERVICE_SYNONYMS["deluxe cut & styling"]},
+    {"id": 3, "name": "Beard Grooming & Shape", "aliases": SERVICE_SYNONYMS["beard grooming & shape"]},
+    {"id": 4, "name": "Full Hair Color", "aliases": SERVICE_SYNONYMS["full hair color"]},
+    {"id": 5, "name": "Balayage Highlights", "aliases": SERVICE_SYNONYMS["balayage highlights"]},
+    {"id": 6, "name": "Root Touch-Up", "aliases": SERVICE_SYNONYMS["root touch-up"]},
+    {"id": 7, "name": "Keratin Smoothing Treatment", "aliases": SERVICE_SYNONYMS["keratin smoothing treatment"]},
+    {"id": 8, "name": "Scalp Detox & Massage", "aliases": SERVICE_SYNONYMS["scalp detox & massage"]},
+    {"id": 9, "name": "Signature Manicure", "aliases": SERVICE_SYNONYMS["signature manicure"]},
+    {"id": 10, "name": "Express Spa Pedicure", "aliases": SERVICE_SYNONYMS["express spa pedicure"]},
 ]
 
 
@@ -106,8 +148,19 @@ def extract_service(
     # match before shorter aliases like "cut" or "styling".
     all_candidates: list[tuple[str, str, int]] = []
     for item in services:
-        candidates = [item["name"]] + item.get("aliases", [])
+        name_lower = item["name"].lower().strip()
+        synonyms = SERVICE_SYNONYMS.get(name_lower, [])
+        candidates = [item["name"]] + item.get("aliases", []) + synonyms
+        # Deduplicate candidates
+        seen = set()
+        unique_cands = []
         for cand in candidates:
+            cl = cand.lower().strip()
+            if cl and cl not in seen:
+                seen.add(cl)
+                unique_cands.append(cand)
+
+        for cand in unique_cands:
             all_candidates.append((cand, item["name"], item["id"]))
             if "&" in cand:
                 all_candidates.append((cand.replace("&", "and"), item["name"], item["id"]))
@@ -124,7 +177,9 @@ def extract_service(
     best_score = 0.0
 
     for item in services:
-        candidates = [item["name"]] + item.get("aliases", [])
+        name_lower = item["name"].lower().strip()
+        synonyms = SERVICE_SYNONYMS.get(name_lower, [])
+        candidates = [item["name"]] + item.get("aliases", []) + synonyms
         for cand in candidates:
             score = fuzz.token_set_ratio(cand.lower(), lower)
             if score > best_score and score >= threshold:
@@ -133,6 +188,37 @@ def extract_service(
 
     if best_match:
         return best_match[0], best_match[1]
+
+    # 3. Direct keyword heuristics fallback
+    keyword_map = [
+        ("haircut", "Classic Haircut"),
+        ("hair cut", "Classic Haircut"),
+        ("cut", "Classic Haircut"),
+        ("styling", "Deluxe Cut & Styling"),
+        ("blowout", "Deluxe Cut & Styling"),
+        ("color", "Full Hair Color"),
+        ("colour", "Full Hair Color"),
+        ("dye", "Full Hair Color"),
+        ("beard", "Beard Grooming & Shape"),
+        ("shave", "Beard Grooming & Shape"),
+        ("balayage", "Balayage Highlights"),
+        ("highlight", "Balayage Highlights"),
+        ("highlights", "Balayage Highlights"),
+        ("root", "Root Touch-Up"),
+        ("keratin", "Keratin Smoothing Treatment"),
+        ("scalp", "Scalp Detox & Massage"),
+        ("massage", "Scalp Detox & Massage"),
+        ("manicure", "Signature Manicure"),
+        ("pedicure", "Express Spa Pedicure"),
+        ("nail", "Signature Manicure"),
+        ("nails", "Signature Manicure"),
+    ]
+    for kw, target_name in keyword_map:
+        if re.search(r"\b" + re.escape(kw) + r"\b", lower):
+            for item in services:
+                if item["name"].lower() == target_name.lower():
+                    return item["name"], item["id"]
+
     return None, None
 
 

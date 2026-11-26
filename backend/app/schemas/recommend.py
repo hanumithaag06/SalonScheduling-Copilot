@@ -16,6 +16,7 @@ class ScoreBreakdownOut(BaseModel):
 
 class RecommendationOut(BaseModel):
     """An explainable appointment recommendation returned to the customer."""
+    service_id: int | None = Field(default=None, description="Salon service ID")
     stylist_id: int
     stylist_name: str
     stylist_specialization: str

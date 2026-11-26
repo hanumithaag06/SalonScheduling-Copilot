@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.engine.intent_parser import (
     DEFAULT_SERVICE_CATALOG,
+    SERVICE_SYNONYMS,
     parse_booking_intent,
     ExtractedIntent,
 )
@@ -54,22 +55,24 @@ def _ensure_utc(dt: datetime) -> datetime:
 
 
 async def get_service_catalog(db: AsyncSession) -> list[dict]:
-    """Fetches active services from DB to feed the intent matching catalog."""
+    """Fetches active services from DB to feed the intent matching catalog, enriched with aliases."""
     stmt = select(Service).where(Service.is_active.is_(True))
     services = (await db.execute(stmt)).scalars().all()
     if not services:
         return DEFAULT_SERVICE_CATALOG
 
-    return [
-        {
+    catalog = []
+    for s in services:
+        aliases = list(SERVICE_SYNONYMS.get(s.name.lower().strip(), []))
+        catalog.append({
             "id": s.id,
             "name": s.name,
             "price": s.price,
             "duration_min": s.duration_min,
             "category": s.category,
-        }
-        for s in services
-    ]
+            "aliases": aliases,
+        })
+    return catalog
 
 
 async def extract_intent_llm(
@@ -232,10 +235,16 @@ async def suggest_assistant_slots(
     # 1. Parse or apply overrides
     parsed = await parse_assistant_message(message, db=db)
 
-    active_service_id = service_id_override or parsed.service_id
-    active_date = date_override or parsed.date
-    active_time_pref = time_pref_override or parsed.time_pref
-    active_max_price = max_price_override or parsed.max_price
+    active_service_id = parsed.service_id or service_id_override
+    active_date = parsed.date or date_override
+    active_time_pref = parsed.time_pref or time_pref_override
+    active_max_price = parsed.max_price or max_price_override
+
+    # Resolve service name if service_id is known from override or parsed
+    active_service_name = parsed.service
+    if active_service_id and not active_service_name:
+        srv_name_stmt = select(Service.name).where(Service.id == active_service_id)
+        active_service_name = (await db.execute(srv_name_stmt)).scalar_one_or_none()
 
     # 2. Check if mandatory fields are missing
     missing: list[str] = []
@@ -245,17 +254,27 @@ async def suggest_assistant_slots(
         missing.append("date")
 
     if missing:
-        follow_up = parsed.follow_up_question
-        if not follow_up:
-            if "service" in missing and "date" in missing:
-                follow_up = "What service would you like to book, and on what date? (e.g. 'Haircut tomorrow afternoon')"
-            elif "service" in missing:
-                follow_up = f"Which salon service would you like to book for {active_date}?"
-            else:
-                follow_up = "What date would you like to schedule your appointment?"
+        if "service" in missing and "date" in missing:
+            follow_up = "What service would you like to book, and on what date? (e.g. 'Haircut tomorrow afternoon')"
+        elif "service" in missing:
+            follow_up = f"Which salon service would you like to book for {active_date}? We offer haircuts, styling, coloring, and treatments."
+        else:
+            name_label = active_service_name or "appointment"
+            follow_up = f"What date would you like to schedule your {name_label}? (e.g. 'tomorrow', 'next Monday', or '2026-12-05')"
+
+        merged_intent = AssistantParseResponse(
+            service=active_service_name,
+            service_id=active_service_id,
+            date=active_date,
+            time_pref=active_time_pref,
+            max_price=active_max_price,
+            missing_fields=missing,
+            follow_up_question=follow_up,
+            source=parsed.source,
+        )
 
         return AssistantSuggestResponse(
-            intent=parsed,
+            intent=merged_intent,
             follow_up_question=follow_up,
             suggestions=[],
             message=follow_up,
@@ -265,8 +284,18 @@ async def suggest_assistant_slots(
     srv_stmt = select(Service).where(Service.id == active_service_id, Service.is_active.is_(True))
     service = (await db.execute(srv_stmt)).scalar_one_or_none()
     if not service:
+        merged_intent = AssistantParseResponse(
+            service=active_service_name,
+            service_id=active_service_id,
+            date=active_date,
+            time_pref=active_time_pref,
+            max_price=active_max_price,
+            missing_fields=[],
+            follow_up_question=None,
+            source=parsed.source,
+        )
         return AssistantSuggestResponse(
-            intent=parsed,
+            intent=merged_intent,
             follow_up_question=None,
             suggestions=[],
             message=f"Service ID #{active_service_id} was not found or is currently unavailable.",
@@ -274,8 +303,18 @@ async def suggest_assistant_slots(
 
     # 4. Check budget filter
     if active_max_price is not None and service.price > active_max_price:
+        merged_intent = AssistantParseResponse(
+            service=service.name,
+            service_id=service.id,
+            date=active_date,
+            time_pref=active_time_pref,
+            max_price=active_max_price,
+            missing_fields=[],
+            follow_up_question=None,
+            source=parsed.source,
+        )
         return AssistantSuggestResponse(
-            intent=parsed,
+            intent=merged_intent,
             follow_up_question=None,
             suggestions=[],
             message=(
@@ -429,6 +468,7 @@ async def suggest_assistant_slots(
 
     out_suggestions = [
         RecommendationOut(
+            service_id=service.id,
             stylist_id=r.stylist_id,
             stylist_name=r.stylist_name,
             stylist_specialization=r.stylist_specialization,
@@ -448,8 +488,19 @@ async def suggest_assistant_slots(
         for r in ranked_recs
     ]
 
+    merged_intent = AssistantParseResponse(
+        service=service.name,
+        service_id=service.id,
+        date=active_date,
+        time_pref=active_time_pref,
+        max_price=active_max_price,
+        missing_fields=[],
+        follow_up_question=None,
+        source=parsed.source,
+    )
+
     return AssistantSuggestResponse(
-        intent=parsed,
+        intent=merged_intent,
         follow_up_question=None,
         suggestions=out_suggestions,
         message=f"I found {len(out_suggestions)} great options for your {service.name} on {active_date}.",
