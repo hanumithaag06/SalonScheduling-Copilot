@@ -18,6 +18,13 @@ export function AuthProvider({ children }) {
   })
   const [loading, setLoading] = useState(true)
 
+  const logout = useCallback(() => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    setToken(null)
+    setUser(null)
+  }, [])
+
   // Fetch /auth/me on initialization if token exists
   useEffect(() => {
     async function loadUser() {
@@ -37,7 +44,7 @@ export function AuthProvider({ children }) {
       }
     }
     loadUser()
-  }, [token])
+  }, [token, logout])
 
   const login = useCallback(async (email, password) => {
     const formData = new FormData()
@@ -61,13 +68,6 @@ export function AuthProvider({ children }) {
   const register = useCallback(async (userData) => {
     const resp = await api.post('/auth/register', userData)
     return resp.data
-  }, [])
-
-  const logout = useCallback(() => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    setToken(null)
-    setUser(null)
   }, [])
 
   const isAuthenticated = Boolean(token && user)

@@ -9,7 +9,6 @@ import { useAuth } from '../context/AuthContext'
 
 export default function NotificationBell() {
   const { isAuthenticated } = useAuth()
-  const { error } = useToast()
   const navigate = useNavigate()
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
