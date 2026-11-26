@@ -61,6 +61,14 @@ export function AuthProvider({ children }) {
     return resp.data
   }, [])
 
+  const switchToMode = useCallback(async (targetMode) => {
+    if (targetMode === 'admin') {
+      return await login('admin@stylify.com', 'Password123!')
+    } else {
+      return await login('emma.w@example.com', 'Password123!')
+    }
+  }, [login])
+
   const isAuthenticated = Boolean(token && user)
   const isAdmin = Boolean(user && user.role === 'admin')
 
@@ -76,6 +84,7 @@ export function AuthProvider({ children }) {
         register,
         logout,
         setUser,
+        switchToMode,
       }}
     >
       {children}

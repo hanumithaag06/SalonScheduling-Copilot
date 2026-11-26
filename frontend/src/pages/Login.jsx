@@ -69,45 +69,45 @@ export default function Login() {
           <p className="text-xs text-gray-500">Access appointments, stylist schedules, and salon operations</p>
         </div>
 
-        {/* Dual Role Selector Tabs */}
+        {/* Dual Mode Selector Tabs */}
         <div className="grid grid-cols-2 p-1.5 bg-gray-100 rounded-2xl gap-1">
           <button
             type="button"
             onClick={() => handleSelectRole('customer')}
-            className={`flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition ${
+            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition ${
               activeTab === 'customer'
                 ? 'bg-white text-indigo-700 shadow-xs'
                 : 'text-gray-500 hover:text-gray-900'
             }`}
           >
             <User className="w-4 h-4" />
-            <span>Customer Login</span>
+            <span>User Mode</span>
           </button>
           <button
             type="button"
             onClick={() => handleSelectRole('admin')}
-            className={`flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition ${
+            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition ${
               activeTab === 'admin'
                 ? 'bg-white text-indigo-700 shadow-xs'
                 : 'text-gray-500 hover:text-gray-900'
             }`}
           >
             <Shield className="w-4 h-4" />
-            <span>Admin Portal</span>
+            <span>Admin Mode</span>
           </button>
         </div>
 
         {/* Quick Demo Credentials Info Pill */}
         <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl text-[11px] text-indigo-900 flex items-center justify-between">
           <div>
-            <span className="font-bold">Active Role:</span> {activeTab === 'admin' ? 'Salon Administrator' : 'Customer Account'}
+            <span className="font-bold">Active Mode:</span> {activeTab === 'admin' ? 'Salon Administrator (Admin Portal)' : 'Customer Client (Booking & Assistant)'}
           </div>
           <button
             type="button"
             onClick={() => handleSelectRole(activeTab)}
             className="text-indigo-600 hover:text-indigo-800 font-bold underline text-[11px]"
           >
-            Reset Demo
+            Quick Fill Demo
           </button>
         </div>
 
