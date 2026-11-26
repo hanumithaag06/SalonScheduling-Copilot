@@ -151,10 +151,11 @@ export default function BookingWizard() {
         } catch {}
       }
 
+      const slotStart = slot.start_ts || slot.start_time
       const resp = await api.post('/holds', {
         stylist_id: slot.stylist_id,
         service_id: Number(selectedServiceId),
-        slot_time: slot.start_time,
+        start_ts: slotStart,
       })
 
       setActiveHold(resp.data)
@@ -199,10 +200,11 @@ export default function BookingWizard() {
     setConfirmLoading(true)
 
     try {
+      const slotStart = selectedSlot.start_ts || selectedSlot.start_time
       const payload = {
         service_id: Number(selectedServiceId),
         stylist_id: selectedSlot.stylist_id,
-        start_ts: selectedSlot.start_time,
+        start_ts: slotStart,
       }
       if (activeHold) {
         payload.hold_id = activeHold.id
@@ -497,7 +499,7 @@ export default function BookingWizard() {
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-indigo-700 text-sm">
-                              {formatSlotTimeRange(rec.start_time, selectedService?.duration_min)}
+                              {formatSlotTimeRange(rec.start_ts || rec.start_time, selectedService?.duration_min)}
                             </span>
                             <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                               Score +{rec.score}
@@ -562,7 +564,7 @@ export default function BookingWizard() {
                         className="p-3 rounded-xl border border-gray-200 hover:border-indigo-600 hover:bg-indigo-50/50 text-left transition group"
                       >
                         <span className="block font-bold text-xs text-gray-900 group-hover:text-indigo-600">
-                          {formatSlotTimeRange(slot.start_time, selectedService?.duration_min)}
+                          {formatSlotTimeRange(slot.start_ts || slot.start_time, selectedService?.duration_min)}
                         </span>
                         <span className="text-[11px] text-gray-600 block font-medium truncate mt-0.5">
                           {slot.stylist_name}
@@ -627,14 +629,14 @@ export default function BookingWizard() {
               </span>
               <div className="text-right">
                 <span className="font-bold text-sm text-indigo-700 block">
-                  {new Date(selectedSlot.start_time).toLocaleDateString([], {
+                  {new Date(selectedSlot.start_ts || selectedSlot.start_time).toLocaleDateString([], {
                     weekday: 'short',
                     month: 'short',
                     day: 'numeric',
                   })}
                 </span>
                 <span className="font-bold text-xs text-indigo-900">
-                  {formatSlotTimeRange(selectedSlot.start_time, selectedService?.duration_min)}
+                  {formatSlotTimeRange(selectedSlot.start_ts || selectedSlot.start_time, selectedService?.duration_min)}
                 </span>
               </div>
             </div>
@@ -663,7 +665,7 @@ export default function BookingWizard() {
             <div>
               <p className="font-bold text-emerald-900">100% Conflict-Free Guarantee</p>
               <p className="text-[11px] text-emerald-800 mt-0.5 leading-relaxed">
-                Stylist <strong>{selectedSlot.stylist_name}</strong> is reserved exclusively for you from <strong>{formatSlotTimeRange(selectedSlot.start_time, selectedService?.duration_min)}</strong>. PostgreSQL database exclusion constraints prevent any overlapping appointments.
+                Stylist <strong>{selectedSlot.stylist_name}</strong> is reserved exclusively for you from <strong>{formatSlotTimeRange(selectedSlot.start_ts || selectedSlot.start_time, selectedService?.duration_min)}</strong>. PostgreSQL database exclusion constraints prevent any overlapping appointments.
               </p>
             </div>
           </div>

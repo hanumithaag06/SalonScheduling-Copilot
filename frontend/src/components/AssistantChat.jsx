@@ -69,13 +69,14 @@ export default function AssistantChat() {
 
   const handleSelectSlot = (suggestion) => {
     setIsOpen(false)
+    const slotStart = suggestion.start_ts || suggestion.start_time
     // Navigate to /book with prefilled state from assistant recommendation
     navigate('/book', {
       state: {
         serviceId: suggestion.service_id,
         stylistId: suggestion.stylist_id,
-        date: suggestion.start_time.split('T')[0],
-        preselectedSlot: suggestion.start_time,
+        date: slotStart ? slotStart.split('T')[0] : '',
+        preselectedSlot: slotStart,
       },
     })
   }
@@ -167,7 +168,7 @@ export default function AssistantChat() {
                               {s.stylist_name}
                             </span>
                             <span className="text-[11px] font-bold text-indigo-600">
-                              {new Date(s.start_time).toLocaleTimeString([], {
+                              {new Date(s.start_ts || s.start_time).toLocaleTimeString([], {
                                 hour: '2-digit',
                                 minute: '2-digit',
                               })}

@@ -335,14 +335,14 @@ export default function MyBookings() {
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => setSelectedSlotTime(s.start_time)}
+                        onClick={() => setSelectedSlotTime(s.start_ts || s.start_time)}
                         className={`p-2 rounded-xl border text-xs font-bold transition ${
-                          selectedSlotTime === s.start_time
+                          selectedSlotTime === (s.start_ts || s.start_time)
                             ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
                             : 'border-gray-200 hover:border-indigo-300'
                         }`}
                       >
-                        {new Date(s.start_time).toLocaleTimeString([], {
+                        {new Date(s.start_ts || s.start_time).toLocaleTimeString([], {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
