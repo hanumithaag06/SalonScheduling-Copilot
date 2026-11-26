@@ -1,4 +1,4 @@
-// Why: Site footer with brand info, quick links, and college project viva attribution.
+// Why: Site footer with brand info, quick links, and platform copyright.
 
 import React from 'react'
 import { Scissors } from 'lucide-react'
