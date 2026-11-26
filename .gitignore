@@ -37,3 +37,7 @@ htmlcov/
 # keep versions tracked, ignore temp files
 *.pyc
 
+# ── Temporary Recording Cache ──
+docs/videos/temp_rec/
+
+
