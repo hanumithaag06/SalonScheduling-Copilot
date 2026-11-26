@@ -1,19 +1,26 @@
-// Why: Stylist Schedule Calendar using FullCalendar with a column per stylist.
-// Shows real-time appointment blocks across all salon professionals.
+// Why: Stylist Schedule Calendar using FullCalendar v7.
+// Shows real-time appointment blocks across all salon professionals with interactive stylist filter.
 
 import React, { useState, useEffect, useRef } from 'react'
 import FullCalendar from '@fullcalendar/react'
-import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid'
-import timeGridPlugin from '@fullcalendar/timegrid'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import { XCircle } from 'lucide-react'
+import timeGridPlugin from '@fullcalendar/react/timegrid'
+import dayGridPlugin from '@fullcalendar/react/daygrid'
+import { XCircle, Calendar as CalendarIcon, User } from 'lucide-react'
 import api from '../../api/client'
 import { useToast } from '../../context/ToastContext'
+
+const STYLIST_COLORS = {
+  1: { bg: '#6366f1', border: '#4f46e5', text: '#ffffff' }, // Indigo
+  2: { bg: '#10b981', border: '#059669', text: '#ffffff' }, // Emerald
+  3: { bg: '#8b5cf6', border: '#7c3aed', text: '#ffffff' }, // Violet
+  4: { bg: '#f59e0b', border: '#d97706', text: '#ffffff' }, // Amber
+}
 
 export default function AdminCalendar() {
   const [stylists, setStylists] = useState([])
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedStylistId, setSelectedStylistId] = useState('all')
   const [selectedEvent, setSelectedEvent] = useState(null)
   const calendarRef = useRef(null)
   const { error } = useToast()
@@ -39,27 +46,25 @@ export default function AdminCalendar() {
     fetchData()
   }, [])
 
-  // Map stylists to FullCalendar resources (columns)
-  const resources = stylists.map((st) => ({
-    id: String(st.id),
-    title: st.name,
-    specialization: st.specialization,
-  }))
+  // Filter bookings by selected stylist if not 'all'
+  const filteredBookings = selectedStylistId === 'all'
+    ? bookings
+    : bookings.filter((b) => String(b.stylist_id) === String(selectedStylistId))
 
-  // Map bookings to FullCalendar events assigned to each stylist resource column
-  const events = bookings.map((b) => {
+  // Map bookings to FullCalendar events
+  const events = filteredBookings.map((b) => {
     const isCancelled = b.status === 'cancelled'
     const isCompleted = b.status === 'completed'
+    const stylistStyle = STYLIST_COLORS[b.stylist_id] || { bg: '#6366f1', border: '#4f46e5', text: '#ffffff' }
 
     return {
       id: String(b.id),
-      resourceId: String(b.stylist_id),
-      title: `${b.service?.name || 'Service'} — ${b.customer?.name || 'Client'}`,
+      title: `${b.service_name || 'Service'} (${b.stylist_name || 'Stylist'})`,
       start: b.start_ts,
       end: b.end_ts,
-      backgroundColor: isCancelled ? '#fda4af' : isCompleted ? '#94a3b8' : '#6366f1',
-      borderColor: isCancelled ? '#f43f5e' : isCompleted ? '#64748b' : '#4f46e5',
-      textColor: isCancelled ? '#881337' : '#ffffff',
+      backgroundColor: isCancelled ? '#fda4af' : isCompleted ? '#94a3b8' : stylistStyle.bg,
+      borderColor: isCancelled ? '#f43f5e' : isCompleted ? '#64748b' : stylistStyle.border,
+      textColor: isCancelled ? '#881337' : stylistStyle.text,
       extendedProps: {
         booking: b,
       },
@@ -71,50 +76,70 @@ export default function AdminCalendar() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 animate-in fade-in pb-12">
+      {/* Header and Filter Controls */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-xs">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Stylist Daily Schedules</h2>
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <CalendarIcon className="w-5 h-5 text-indigo-600" />
+            <span>Stylist Schedule Calendar</span>
+          </h2>
           <p className="text-xs text-gray-500 mt-0.5">
-            Resource timeline view displaying appointment allocations per stylist.
+            Real-time appointment schedule, booking slots, and professional availability.
           </p>
         </div>
 
-        {/* Legend */}
-        <div className="flex items-center gap-4 text-xs font-medium">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-indigo-600"></span>
-            <span className="text-gray-600">Confirmed</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-rose-400"></span>
-            <span className="text-gray-600">Cancelled</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-slate-400"></span>
-            <span className="text-gray-600">Completed</span>
-          </div>
+        {/* Stylist Filter Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 bg-gray-50 p-1.5 rounded-2xl border border-gray-200/80">
+          <button
+            type="button"
+            onClick={() => setSelectedStylistId('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              selectedStylistId === 'all'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/60'
+            }`}
+          >
+            All Stylists ({bookings.length})
+          </button>
+          {stylists.map((st) => (
+            <button
+              key={st.id}
+              type="button"
+              onClick={() => setSelectedStylistId(String(st.id))}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                selectedStylistId === String(st.id)
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/60'
+              }`}
+            >
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: STYLIST_COLORS[st.id]?.bg || '#6366f1' }}
+              />
+              <span>{st.name}</span>
+            </button>
+          ))}
         </div>
       </div>
 
       {loading ? (
-        <div className="py-24 text-center">
+        <div className="py-24 text-center bg-white rounded-3xl border border-gray-100">
           <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-          <p className="text-xs text-gray-500">Loading stylist columns...</p>
+          <p className="text-xs text-gray-500">Loading stylist schedules...</p>
         </div>
       ) : (
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <FullCalendar
             ref={calendarRef}
-            plugins={[resourceTimeGridPlugin, timeGridPlugin, dayGridPlugin]}
-            initialView="resourceTimeGridDay"
-            resources={resources}
+            plugins={[timeGridPlugin, dayGridPlugin]}
+            initialView="timeGridDay"
             events={events}
             eventClick={handleEventClick}
             headerToolbar={{
               left: 'prev,next today',
               center: 'title',
-              right: 'resourceTimeGridDay,timeGridWeek,dayGridMonth',
+              right: 'timeGridDay,timeGridWeek,dayGridMonth',
             }}
             slotMinTime="08:00:00"
             slotMaxTime="20:00:00"
@@ -153,7 +178,7 @@ export default function AdminCalendar() {
 
             <div>
               <h3 className="text-lg font-bold text-gray-900">
-                {selectedEvent.service?.name || `Service #${selectedEvent.service_id}`}
+                {selectedEvent.service_name || `Service #${selectedEvent.service_id}`}
               </h3>
               <p className="text-xs text-indigo-700 font-medium">Booking #{selectedEvent.id}</p>
             </div>
@@ -162,12 +187,12 @@ export default function AdminCalendar() {
               <div className="flex justify-between">
                 <span className="text-gray-500">Customer:</span>
                 <span className="font-bold text-gray-900">
-                  {selectedEvent.customer?.name} ({selectedEvent.customer?.email})
+                  {selectedEvent.user_name || selectedEvent.customer?.name} ({selectedEvent.user_email || selectedEvent.customer?.email})
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Stylist:</span>
-                <span className="font-bold text-gray-900">{selectedEvent.stylist?.name}</span>
+                <span className="font-bold text-gray-900">{selectedEvent.stylist_name || selectedEvent.stylist?.name}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Scheduled Time:</span>
@@ -178,25 +203,23 @@ export default function AdminCalendar() {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}{' '}
-                  -{' '}
-                  {new Date(selectedEvent.end_ts).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  &bull; {new Date(selectedEvent.end_ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Service Price:</span>
-                <span className="font-bold text-emerald-700">${selectedEvent.service?.price}</span>
+                <span className="text-gray-500">Duration & Exclusivity:</span>
+                <span className="font-semibold text-emerald-700">1-on-1 Dedicated (Conflict-Free)</span>
               </div>
             </div>
 
-            <button
-              onClick={() => setSelectedEvent(null)}
-              className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-xl transition"
-            >
-              Close
-            </button>
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-xl transition"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

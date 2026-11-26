@@ -10,11 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fullcalendar/core": "^6.1.22",
-    "@fullcalendar/daygrid": "^6.1.22",
     "@fullcalendar/react": "^7.1.5",
-    "@fullcalendar/resource-timegrid": "^6.1.22",
-    "@fullcalendar/timegrid": "^6.1.22",
     "@tailwindcss/vite": "^4.3.5",
     "axios": "^1.21.1",
     "lucide-react": "^1.79.0",
