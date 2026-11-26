@@ -1,6 +1,6 @@
 """Add btree_gist exclusion constraint on bookings
 
-Revision ID: 002_btree_gist_exclusion_constraint
+Revision ID: 002_btree_gist_exclusion
 Revises: 001_initial_schema
 Create Date: 2026-11-23 10:05:00.000000
 
@@ -12,7 +12,7 @@ from typing import Sequence, Union
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '002_btree_gist_exclusion_constraint'
+revision: str = '002_btree_gist_exclusion'
 down_revision: Union[str, None] = '001_initial_schema'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
