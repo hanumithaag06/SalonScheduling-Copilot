@@ -49,6 +49,16 @@ export default function BookingWizard() {
   const [recommendedSlots, setRecommendedSlots] = useState([])
   const [selectedSlot, setSelectedSlot] = useState(null)
 
+  // Helper: calculate and format exact start and end time window
+  const formatSlotTimeRange = (startTimeIso, durationMin = 30) => {
+    if (!startTimeIso) return ''
+    const start = new Date(startTimeIso)
+    const end = new Date(start.getTime() + (durationMin || 30) * 60000)
+    const startStr = start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    const endStr = end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    return `${startStr} – ${endStr}`
+  }
+
   // Active Hold
   const [activeHold, setActiveHold] = useState(null)
   const [holdLoading, setHoldLoading] = useState(false)
@@ -343,7 +353,17 @@ export default function BookingWizard() {
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-xl space-y-6 animate-in fade-in">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Step 2: Date & Preferences</h2>
-            <p className="text-xs text-gray-500 mt-1">When would you like to visit?</p>
+            <p className="text-xs text-gray-500 mt-1">Select your target day and time-of-day preference filter.</p>
+          </div>
+
+          <div className="p-4 bg-indigo-50/80 border border-indigo-200/70 rounded-2xl text-xs text-indigo-950 flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-indigo-900">Guaranteed 1-on-1 Dedicated Time Window</p>
+              <p className="text-[11px] text-indigo-800 mt-0.5 leading-relaxed">
+                Appointments are never booked as broad timeframes. Every booking reserves an <strong>exact start and end time</strong> (e.g. 10:00 AM – 10:45 AM). The time filter below simply narrows available openings. Once a slot is taken, no other customer can book or overlap with that stylist.
+              </p>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -361,12 +381,15 @@ export default function BookingWizard() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-2">
-                Preferred Time of Day
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">
+                Filter by Part of Day
               </label>
+              <p className="text-[11px] text-gray-500 mb-2">
+                Narrows down the list of exact openings. You will pick your exact arrival time on the next step.
+              </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
-                  { id: 'any', label: 'Any Time' },
+                  { id: 'any', label: 'All Day' },
                   { id: 'morning', label: 'Morning (9am-12pm)' },
                   { id: 'afternoon', label: 'Afternoon (12pm-5pm)' },
                   { id: 'evening', label: 'Evening (5pm-8pm)' },
@@ -377,7 +400,7 @@ export default function BookingWizard() {
                     onClick={() => setTimePref(tp.id)}
                     className={`p-3 rounded-xl border text-xs font-medium transition ${
                       timePref === tp.id
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 font-semibold'
+                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 font-semibold shadow-xs'
                         : 'border-gray-200 hover:bg-gray-50 text-gray-700'
                     }`}
                   >
@@ -419,7 +442,7 @@ export default function BookingWizard() {
               disabled={!selectedDate}
               className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-xl shadow-md transition flex items-center gap-2 text-sm"
             >
-              <span>View Available Slots</span>
+              <span>View Exact Open Slots</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -474,14 +497,15 @@ export default function BookingWizard() {
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-indigo-700 text-sm">
-                              {new Date(rec.start_time).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
+                              {formatSlotTimeRange(rec.start_time, selectedService?.duration_min)}
                             </span>
                             <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                               Score +{rec.score}
                             </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 font-medium">
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            <span>1-on-1 Dedicated ({selectedService?.duration_min || 30}m)</span>
                           </div>
                           <p className="font-semibold text-xs text-gray-900">{rec.stylist_name}</p>
                           <p className="text-[11px] text-gray-600 leading-snug">{rec.reason}</p>
@@ -529,22 +553,22 @@ export default function BookingWizard() {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
                     {availableSlots.map((slot, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSelectSlotForHold(slot)}
                         disabled={holdLoading}
-                        className="p-2.5 rounded-xl border border-gray-200 hover:border-indigo-600 hover:bg-indigo-50/50 text-left transition group"
+                        className="p-3 rounded-xl border border-gray-200 hover:border-indigo-600 hover:bg-indigo-50/50 text-left transition group"
                       >
                         <span className="block font-bold text-xs text-gray-900 group-hover:text-indigo-600">
-                          {new Date(slot.start_time).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                          {formatSlotTimeRange(slot.start_time, selectedService?.duration_min)}
                         </span>
-                        <span className="text-[10px] text-gray-500 block truncate">
+                        <span className="text-[11px] text-gray-600 block font-medium truncate mt-0.5">
                           {slot.stylist_name}
+                        </span>
+                        <span className="text-[10px] text-emerald-600 block mt-0.5">
+                          &bull; Dedicated 1-on-1
                         </span>
                       </button>
                     ))}
@@ -599,16 +623,27 @@ export default function BookingWizard() {
             </div>
             <div className="flex items-center justify-between pb-3 border-b border-gray-200">
               <span className="text-xs uppercase font-semibold text-gray-500 tracking-wider">
-                Date & Time
+                Reserved Window
               </span>
-              <span className="font-bold text-sm text-indigo-700">
-                {new Date(selectedSlot.start_time).toLocaleString([], {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+              <div className="text-right">
+                <span className="font-bold text-sm text-indigo-700 block">
+                  {new Date(selectedSlot.start_time).toLocaleDateString([], {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </span>
+                <span className="font-bold text-xs text-indigo-900">
+                  {formatSlotTimeRange(selectedSlot.start_time, selectedService?.duration_min)}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+              <span className="text-xs uppercase font-semibold text-gray-500 tracking-wider">
+                Exclusivity
+              </span>
+              <span className="font-semibold text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                Dedicated 1-on-1 (Zero Overlap)
               </span>
             </div>
             <div className="flex items-center justify-between pb-3 border-b border-gray-200">
@@ -623,10 +658,20 @@ export default function BookingWizard() {
             </div>
           </div>
 
-          <div className="p-3.5 bg-blue-50/70 border border-blue-100 rounded-xl text-xs text-blue-900 flex items-start gap-2">
-            <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+          <div className="p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-xl text-xs text-emerald-950 flex items-start gap-2.5">
+            <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-emerald-900">100% Conflict-Free Guarantee</p>
+              <p className="text-[11px] text-emerald-800 mt-0.5 leading-relaxed">
+                Stylist <strong>{selectedSlot.stylist_name}</strong> is reserved exclusively for you from <strong>{formatSlotTimeRange(selectedSlot.start_time, selectedService?.duration_min)}</strong>. PostgreSQL database exclusion constraints prevent any overlapping appointments.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-xs text-blue-900 flex items-start gap-2">
+            <Clock className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
             <span>
-              Free cancellation and rescheduling are allowed up to 2 hours before appointment time.
+              Free cancellation and rescheduling are allowed up to 2 hours before your appointment.
             </span>
           </div>
 
@@ -679,16 +724,19 @@ export default function BookingWizard() {
               <span className="font-bold text-gray-900">{selectedSlot?.stylist_name}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Scheduled Time:</span>
+              <span className="text-gray-500">Reserved Window:</span>
               <span className="font-bold text-indigo-700">
-                {new Date(confirmedBooking.start_ts).toLocaleString([], {
+                {new Date(confirmedBooking.start_ts).toLocaleDateString([], {
                   weekday: 'short',
                   month: 'short',
                   day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                })}{' '}
+                &bull; {formatSlotTimeRange(confirmedBooking.start_ts, selectedService?.duration_min)}
               </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Guarantee:</span>
+              <span className="font-semibold text-emerald-700">1-on-1 Dedicated (Conflict-Free)</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Status:</span>

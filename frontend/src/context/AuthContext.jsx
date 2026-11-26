@@ -47,22 +47,13 @@ export function AuthProvider({ children }) {
   }, [token, logout])
 
   const login = useCallback(async (email, password) => {
-    const formData = new FormData()
-    formData.append('username', email)
-    formData.append('password', password)
-
-    const resp = await api.post('/auth/login', formData)
-    const { access_token } = resp.data
+    const resp = await api.post('/auth/login', { email, password })
+    const { access_token, user: userData } = resp.data
     localStorage.setItem('token', access_token)
+    localStorage.setItem('user', JSON.stringify(userData))
     setToken(access_token)
-
-    // Fetch user details
-    const meResp = await api.get('/auth/me', {
-      headers: { Authorization: `Bearer ${access_token}` },
-    })
-    setUser(meResp.data)
-    localStorage.setItem('user', JSON.stringify(meResp.data))
-    return meResp.data
+    setUser(userData)
+    return userData
   }, [])
 
   const register = useCallback(async (userData) => {

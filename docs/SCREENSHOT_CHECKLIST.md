@@ -1,6 +1,6 @@
 # Stylify: Submission Screenshot Checklist
 
-This checklist documents the essential screenshots required for the academic project submission, final viva presentation, and examiner evaluation portfolio.
+This checklist documents the essential screenshots required for the production release portfolio, product evaluation, and technical verification.
 
 ---
 

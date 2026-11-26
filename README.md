@@ -8,7 +8,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)
 ![Tests](https://img.shields.io/badge/tests-99%20passed-success.svg)
 
-> **College Project Code**: `PRJ-012` &bull; **Capstone Title**: *Intelligent Salon Scheduling and Appointment Management Platform with Concurrency Guards, Explainable Recommendations, and AI Conversational Copilot*
+> **Product Release**: `v1.0.0-production` &bull; **System Architecture**: *Intelligent Salon Scheduling and Appointment Management Platform with Concurrency Guards, Explainable Recommendations, and AI Conversational Copilot*
 
 ---
 
@@ -347,4 +347,4 @@ pytest --cov=app --cov-report=term-missing -v
 
 ## 10. License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details. Built for College Project PRJ-012.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details. Built for Stylify Salon Platform.

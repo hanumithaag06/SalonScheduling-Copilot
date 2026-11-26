@@ -1,8 +1,8 @@
 # Stylify: 2-3 Minute Project Demonstration Video Script
 
 **Target Duration**: 2 minutes 45 seconds  
-**Tone**: Professional, technical, concise, and academic.  
-**Presenter**: Lead Developer / Student Presenter
+**Tone**: Professional, technical, concise, and business-focused.  
+**Presenter**: Lead Engineer / Product Presenter
 
 ---
 

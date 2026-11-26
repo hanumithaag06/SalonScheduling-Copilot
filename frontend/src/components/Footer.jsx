@@ -13,7 +13,7 @@ export default function Footer() {
             <Scissors className="w-3.5 h-3.5" />
           </div>
           <span className="font-bold text-gray-900">Stylify Salon Platform</span>
-          <span>&bull; College Project PRJ-012</span>
+          <span>&bull; Intelligent Salon Copilot</span>
         </div>
 
         <div className="flex gap-4">

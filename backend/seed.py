@@ -1,4 +1,4 @@
-# Why: Database seeder for college project demo data.
+# Why: Database seeder for demo and production seed data.
 # Populates 10 services, 5 stylists with Mon-Sat working hours, 1 admin, 8 customers,
 # and ~60 historical bookings over the last 60 days. Safely re-runnable (idempotent).
 

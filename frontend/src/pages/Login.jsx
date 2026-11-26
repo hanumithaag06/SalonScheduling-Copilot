@@ -1,15 +1,16 @@
-// Why: User authentication sign-in page with email/password validation,
-// JWT token storage, error toast notifications, and redirect state preservation.
+// Why: User authentication sign-in page with dual Customer & Admin role portals,
+// quick-fill demo buttons, email/password validation, and JSON payload submission.
 
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { LogIn, Scissors } from 'lucide-react'
+import { LogIn, Scissors, Shield, User, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 
 export default function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [activeTab, setActiveTab] = useState('customer') // 'customer' | 'admin'
+  const [email, setEmail] = useState('emma.w@example.com')
+  const [password, setPassword] = useState('Password123!')
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const { success, error } = useToast()
@@ -18,8 +19,19 @@ export default function Login() {
 
   const from = location.state?.from?.pathname || '/'
 
+  const handleSelectRole = (role) => {
+    setActiveTab(role)
+    if (role === 'admin') {
+      setEmail('admin@stylify.com')
+      setPassword('Password123!')
+    } else {
+      setEmail('emma.w@example.com')
+      setPassword('Password123!')
+    }
+  }
+
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    if (e) e.preventDefault()
     if (!email || !password) {
       error('Please provide both email and password')
       return
@@ -32,12 +44,15 @@ export default function Login() {
       if (user.role === 'admin') {
         navigate('/admin/dashboard')
       } else {
-        navigate(from)
+        navigate(from === '/' ? '/my-bookings' : from)
       }
     } catch (err) {
       console.error('Login failed:', err)
-      const detail = err.response?.data?.detail || 'Invalid email or password'
-      error(detail)
+      let detail = err.response?.data?.detail || 'Invalid email or password'
+      if (Array.isArray(detail)) {
+        detail = detail.map((d) => d.msg || JSON.stringify(d)).join(', ')
+      }
+      error(typeof detail === 'string' ? detail : 'Authentication failed. Please check credentials.')
     } finally {
       setLoading(false)
     }
@@ -51,7 +66,49 @@ export default function Login() {
             <Scissors className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Sign in to Stylify</h2>
-          <p className="text-xs text-gray-500">Access your appointments, waitlist status, and profile</p>
+          <p className="text-xs text-gray-500">Access appointments, stylist schedules, and salon operations</p>
+        </div>
+
+        {/* Dual Role Selector Tabs */}
+        <div className="grid grid-cols-2 p-1.5 bg-gray-100 rounded-2xl gap-1">
+          <button
+            type="button"
+            onClick={() => handleSelectRole('customer')}
+            className={`flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition ${
+              activeTab === 'customer'
+                ? 'bg-white text-indigo-700 shadow-xs'
+                : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span>Customer Login</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSelectRole('admin')}
+            className={`flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition ${
+              activeTab === 'admin'
+                ? 'bg-white text-indigo-700 shadow-xs'
+                : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            <Shield className="w-4 h-4" />
+            <span>Admin Portal</span>
+          </button>
+        </div>
+
+        {/* Quick Demo Credentials Info Pill */}
+        <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl text-[11px] text-indigo-900 flex items-center justify-between">
+          <div>
+            <span className="font-bold">Active Role:</span> {activeTab === 'admin' ? 'Salon Administrator' : 'Customer Account'}
+          </div>
+          <button
+            type="button"
+            onClick={() => handleSelectRole(activeTab)}
+            className="text-indigo-600 hover:text-indigo-800 font-bold underline text-[11px]"
+          >
+            Reset Demo
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -93,7 +150,7 @@ export default function Login() {
             ) : (
               <>
                 <LogIn className="w-4 h-4" />
-                <span>Sign In</span>
+                <span>Sign In as {activeTab === 'admin' ? 'Administrator' : 'Customer'}</span>
               </>
             )}
           </button>
@@ -102,7 +159,7 @@ export default function Login() {
         <div className="text-center text-xs text-gray-500 pt-2 border-t border-gray-100">
           Don't have an account yet?{' '}
           <Link to="/register" className="font-semibold text-indigo-600 hover:text-indigo-700">
-            Create an account
+            Create customer account
           </Link>
         </div>
       </div>
