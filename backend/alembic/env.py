@@ -24,8 +24,14 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set the SQLAlchemy URL from our pydantic settings
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Set the SQLAlchemy URL from our pydantic settings, ensuring asyncpg dialect
+db_url = str(settings.DATABASE_URL)
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+asyncpg://"):
+    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+config.set_main_option("sqlalchemy.url", db_url)
 
 # Target metadata for 'autogenerate' support
 target_metadata = Base.metadata

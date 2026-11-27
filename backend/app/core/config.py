@@ -1,6 +1,7 @@
 # Why: Central configuration loaded from environment variables.
 # pydantic-settings reads .env automatically so secrets never live in code.
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,6 +13,16 @@ class Settings(BaseSettings):
 
     # ── Database ──
     DATABASE_URL: str = "postgresql+asyncpg://stylify:stylify_pass@localhost:5432/stylify_db"
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def assemble_db_connection(cls, v: str | None) -> str:
+        if isinstance(v, str):
+            if v.startswith("postgres://"):
+                return v.replace("postgres://", "postgresql+asyncpg://", 1)
+            if v.startswith("postgresql://") and not v.startswith("postgresql+asyncpg://"):
+                return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
 
     # ── JWT ──
     SECRET_KEY: str = "change-me-to-a-random-64-char-string"
