@@ -1,0 +1,50 @@
+# Production full-stack Docker Compose deployment
+# Usage: docker compose -f docker-compose.prod.yml up -d --build
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: stylify_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-stylify}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stylify_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-stylify_db}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stylify_backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-stylify}:${POSTGRES_PASSWORD:-stylify_pass}@db:5432/${POSTGRES_DB:-stylify_db}
+      SECRET_KEY: ${SECRET_KEY:-stylify-super-secret-jwt-key-min-32-chars-long}
+      APP_ENV: production
+      DEBUG: "false"
+      ACCESS_TOKEN_EXPIRE_MINUTES: 1440
+      EMAIL_BACKEND: console
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000
+    container_name: stylify_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  pgdata:
