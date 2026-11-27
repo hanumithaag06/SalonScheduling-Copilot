@@ -45,8 +45,15 @@ export default function Register() {
       navigate('/')
     } catch (err) {
       console.error('Registration failed:', err)
-      const detail = err.response?.data?.detail || 'Registration failed. Please check your details.'
-      error(detail)
+      let detail = err.response?.data?.detail
+      if (!detail) {
+        if (!err.response) {
+          detail = 'Cannot connect to backend server. Render may be waking up (wait 30s) or VITE_API_URL is incorrect.'
+        } else {
+          detail = 'Registration failed. Please check your details.'
+        }
+      }
+      error(typeof detail === 'string' ? detail : 'Registration failed.')
     } finally {
       setLoading(false)
     }

@@ -48,7 +48,14 @@ export default function Login() {
       }
     } catch (err) {
       console.error('Login failed:', err)
-      let detail = err.response?.data?.detail || 'Invalid email or password'
+      let detail = err.response?.data?.detail
+      if (!detail) {
+        if (!err.response) {
+          detail = 'Cannot connect to backend server. Render may be waking up (wait 30s) or VITE_API_URL is incorrect.'
+        } else {
+          detail = 'Invalid email or password'
+        }
+      }
       if (Array.isArray(detail)) {
         detail = detail.map((d) => d.msg || JSON.stringify(d)).join(', ')
       }
